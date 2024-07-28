@@ -1,7 +1,6 @@
 from copy import deepcopy
 import numpy as np
-from torch.nn import Module
-from torch import tensor
+import torch
 from agent.agent_utils.synchronization import SyncContex, SynchronizationBuilder
 from agent.agent_utils.action_selection import ActionContext, ActionBuilder, Action
 from experiance.experiance import ExpSample
@@ -29,7 +28,7 @@ class Optimizer(Protocol):
 class Agent:
 
     def __init__(self, 
-                 online_model:Module,
+                 online_model:torch.nn.Module,
                  gamma:float,
                  env:Env,
                  loss_function:callable,
@@ -53,15 +52,25 @@ class Agent:
     def compute_action(self, *args, **kwargs) -> None:
         return self.action.compute_action(*args, **kwargs)
     
-    def train_agent(self, samples:dict, target_model:Module) -> None:
+    def train_agent(self, samples:dict, target_model:torch.nn.Module) -> None:
+        self._train_agent(samples, target_model)
         
-        samples = {key:tensor(np.array(item)) for key, item in samples.items()}
+        
+    def _train_agent(self, samples:dict, target_model:torch.nn.Module) -> None:
+        samples = {key:torch.tensor(np.array(item)) for key, item in samples.items()}
+        
+        samples['state']  = samples['state'].type(torch.float32)
+        samples['reward']  = samples['reward'].type(torch.float32)
+        samples['previous_state']  = samples['previous_state'].type(torch.float32)
+        samples['action'] = samples['action'].type(torch.int64)
         
         target_vals = target_model(samples['state']).max(1)[0].detach()
         target_vals[samples['terminated']] = 0.
         
         target_vals = samples['reward'] + self.gamma * target_vals
-        predictions = self.model(samples['previous_state']).gather(1, samples['action'].unsqueeze(-1))
+            
+        predictions = self.model(samples['previous_state']) \
+            .gather(1, samples['action'].unsqueeze(-1)).squeeze(-1)
         
         loss = self.loss_function(target_vals, predictions)
         loss.backward()
@@ -69,7 +78,7 @@ class Agent:
         self.optimizer.zero_grad()
         
         
-    def loss_function(self, target_vals:tensor, predictions:tensor) -> callable:
+    def loss_function(self, target_vals:torch.tensor, predictions:torch.tensor) -> callable:
         #There are different loss function so at the end chage it to the factory
         return self._loss_function(predictions, target_vals)
         
