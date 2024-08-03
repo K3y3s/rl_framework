@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from torch.nn import Module
 from dataclasses import dataclass
-from typing import Callable
+from copy import deepcopy
 
 class Synchronization(ABC):
 
@@ -18,25 +18,25 @@ class SimpleSynchronization(Synchronization):
 
     def __init__(self, nn:Module, nn_to_synchronize:Module, synchronization:int) -> None:
         self.nn = nn
-        self.nn_to_synchronize
+        self.nn_to_synchronize = nn_to_synchronize
         self.synchronization = synchronization
 
     def make_synchronization(self, current_step:int) -> None:
         if current_step % self.synchronization == 0:
-            pass
+            self.nn_to_synchronize = deepcopy(self.nn)
 
 @dataclass
-class SyncContex:
+class SyncContext:
     nn:Module
     synchronization:int
-    nn_to_synchornize:Module | None = None
+    nn_to_synchronize:Module | None = None
 
 class SynchronizationBuilder:
 
-    def __init__(self, sync_context: SyncContex) -> None:
+    def __init__(self, sync_context: SyncContext) -> None:
         self.sync = sync_context
 
-    def build_synchronization(self) -> callable:
+    def build_synchronization(self) -> Synchronization:
         
         if self.sync.synchronization == 0:
             return NoSynchronization().make_synchronization

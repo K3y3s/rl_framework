@@ -38,7 +38,7 @@ class Policy(ABC):
 class Greedy(Policy):
     
     def choose_action(self, action_state_values:Tensor):
-        return argmax(action_state_values)
+        return argmax(action_state_values).item()
     
 class SoftMax(Policy):
 
@@ -122,7 +122,7 @@ class Action:
         else:
             actions_vals = self.compute_actions_states(states)
 
-            if isinstance(actions_vals, list):
+            if not isinstance(actions_vals, int):
                 action_number = self.choose_action(actions_vals)
             else:
                 action_number = actions_vals
@@ -136,10 +136,10 @@ class ActionBuilder:
         self.action_context = action_context
 
     def _build_policy(self) -> None:
-        if self.action_context == PolicyMethods.GREEDY:
-            self.a.choose_action = Greedy.choose_action
-        elif self.action_context == PolicyMethods.SOFT_MAX:
-            self.a.choose_action = PolicyMethods.SOFT_MAX
+        if self.action_context.policy == PolicyMethods.GREEDY:
+            self.a.choose_action = Greedy().choose_action
+        elif self.action_context.policy == PolicyMethods.SOFT_MAX:
+            self.a.choose_action = SoftMax().choose_action
 
     def _build_action_state_computation(self) -> None:
         if self.action_context.action_methods == ActionMethods.NEURAL_NETWORK and \

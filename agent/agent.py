@@ -1,10 +1,11 @@
 from copy import deepcopy
 import numpy as np
 import torch
-from agent.agent_utils.synchronization import SyncContex, SynchronizationBuilder
-from agent.agent_utils.action_selection import ActionContext, ActionBuilder, Action
-from experiance.experiance import ExpSample
+from .agent_utils.synchronization import  SynchronizationBuilder, SyncContext
+from .agent_utils.action_selection import ActionContext, ActionBuilder, Action
+from experience.experience import ExpSample
 from typing import Protocol, TypeVar, Any
+
 
 ObsType = TypeVar("ObsType")
 ActType = TypeVar("ActType")
@@ -23,7 +24,7 @@ class Optimizer(Protocol):
         ...
     
 
-#TODO: change Module to something more generic with use of Protocol
+#TODO: change Module for online_model to something more generic with use of Protocol
 
 class Agent:
 
@@ -38,7 +39,7 @@ class Agent:
         
         self.model = online_model
         self.env = env
-        self.model_to_synchronize = None
+        self.target_model = None
         self.gamma = gamma
         self._loss_function = loss_function
         self.learning_rate = learning_rate
@@ -52,19 +53,19 @@ class Agent:
     def compute_action(self, *args, **kwargs) -> None:
         return self.action.compute_action(*args, **kwargs)
     
-    def train_agent(self, samples:dict, target_model:torch.nn.Module) -> None:
-        self._train_agent(samples, target_model)
+    def train_agent(self, samples:dict) -> None:
+        self._train_agent(samples)
         
         
-    def _train_agent(self, samples:dict, target_model:torch.nn.Module) -> None:
-        samples = {key:torch.tensor(np.array(item)) for key, item in samples.items()}
+    def _train_agent(self, samples:dict) -> None:
         
-        samples['state']  = samples['state'].type(torch.float32)
-        samples['reward']  = samples['reward'].type(torch.float32)
-        samples['previous_state']  = samples['previous_state'].type(torch.float32)
-        samples['action'] = samples['action'].type(torch.int64)
-        
-        target_vals = target_model(samples['state']).max(1)[0].detach()
+        samples = self._prepare_data(samples)
+      
+        if self.target_model is not None:
+            target_vals = self.target_model(samples['state']).max(1)[0].detach()
+        else:
+            target_vals = self.model(samples['state']).max(1)[0].detach()
+            
         target_vals[samples['terminated']] = 0.
         
         target_vals = samples['reward'] + self.gamma * target_vals
@@ -76,10 +77,27 @@ class Agent:
         loss.backward()
         self.optimizer.step()
         self.optimizer.zero_grad()
+    
+    def _prepare_data(self, samples:dict) -> dict:
+        samples ={key: torch.tensor(np.array(item)) for key, item in samples.items()}
+        self._reshape_data(samples)
+        self._change_type(samples)
+        return samples
         
+    def _reshape_data(self, samples:dict) -> None:
+        for reshape_name in ['state', 'previous_state']:
+            if len(samples[reshape_name].shape) == 1:
+                samples[reshape_name] = torch.reshape(samples[reshape_name], (-1, 1))      
+
+    def _change_type(self, samples:dict) -> None:
+        for name_to_float in ['state', 'previous_state', 'reward']:
+            samples[name_to_float]  = samples[name_to_float].type(torch.float32)
+            
+        samples['action'] = samples['action'].type(torch.int64)
+    
         
     def loss_function(self, target_vals:torch.tensor, predictions:torch.tensor) -> callable:
-        #There are different loss function so at the end chage it to the factory
+        #TODO: There are different loss function so at the end change it to the factory
         return self._loss_function(predictions, target_vals)
         
         
@@ -107,7 +125,7 @@ class AgentBuilder:
         self.action_context = action_context
         self.nn = action_context.nn
         self.synchronize = synchronization
-        self.nn_to_synchronize = None if synchronization == 0 else deepcopy(self.nn)
+        self.target_model = None if synchronization == 0 else deepcopy(self.nn)
         
         self.agent = Agent(
             online_model=self.nn, 
@@ -118,16 +136,14 @@ class AgentBuilder:
             learning_rate=learning_rate
             )
         
-        self.agent.nn_to_synchronize = self.nn_to_synchronize
+        self.agent.target_model = self.target_model
 
     def build_agent(self) -> Agent:
-
-        sync_context = SyncContex(
+        sync_context = SyncContext(
             nn=self.nn, 
             synchronization=self.synchronize,
-            nn_to_synchornize=self.nn_to_synchronize
+            nn_to_synchronize=self.target_model
             )
-
         self.agent.synchronize = SynchronizationBuilder(sync_context).build_synchronization()
         
         self.agent.action = ActionBuilder(self.action_context).build_action() 
