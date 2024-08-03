@@ -22,10 +22,16 @@ class ActionContext:
     epsilon:float | None = None # randomization factor for exploration
     nn: Module | None = None # neural network used for actions
     policy:str | None = None
+    epsilon_decay: int | None = None # after how many steps epsilon should be set to epsilon_value
+    epsilon_decay_value: float | None = None # what is a value of an epsilon after epsilon_decay 
+    
 
     def __post_init__(self):
         self.action_methods =ActionMethods[self.action_methods]
         self.policy = PolicyMethods[self.policy]
+        
+        if (self.epsilon_decay is None) ^ (self.epsilon_decay_value is None):
+            raise ValueError("Set both values epsilon decay and epsilon_decay_value")
         
 ############################################ Policy
 
@@ -104,6 +110,17 @@ class Action:
 
     def __init__(self, action_context:ActionContext):
         self.action_context = action_context
+        self.current_step = 0
+        self._trigger_decay = True
+
+    @property
+    def trigger_decay(self) -> bool:
+        return self._trigger_decay
+    
+    @trigger_decay.setter
+    def trigger_decay(self, trigger:bool) -> None:
+        self._trigger_decay = trigger
+        self.current_step = 0
 
     def make_exploration() -> int:
         raise NotImplementedError
@@ -114,9 +131,22 @@ class Action:
     def choose_action(self, action_state_values: list[float]) -> int:
         raise NotImplementedError
 
+    def _compute_epsilon(self) -> float:
+        
+        if self.action_context.epsilon_decay is not None and self._trigger_decay:
+            eps_diff = self.action_context.epsilon - self.action_context.epsilon_decay_value
+            epsilon = self.action_context.epsilon -  eps_diff/self.action_context.epsilon_decay * self.current_step
+            
+        else:
+            epsilon = self.action_context.epsilon
+    
+        return epsilon
+    
     def compute_action(self, states = None) -> int | float:
         
-        if np.random.random() < self.action_context.epsilon:
+        epsilon = self._compute_epsilon()
+        
+        if np.random.random() < epsilon:
             action_number = self.make_exploration(self.action_context.actions_number)
         
         else:
@@ -127,6 +157,8 @@ class Action:
             else:
                 action_number = actions_vals
 
+        self.current_step +=1
+        
         return action_number
 
 
