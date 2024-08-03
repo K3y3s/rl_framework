@@ -11,7 +11,7 @@ class NN(nn.Module):
     
     def __init__(self, 
         nb_of_state_variables:int, 
-        nb_of_actions:int,
+        nb_of_output_values:int,
         activation_functions:Callable,
         hidden_dims:tuple[int],
         add_biases:bool = False
@@ -20,7 +20,7 @@ class NN(nn.Module):
         super().__init__()
         self.activation_functions = activation_functions
         self.nb_of_state_variables = nb_of_state_variables
-        self.nb_of_actions = nb_of_actions
+        self.nb_of_output_values = nb_of_output_values
         
         self.input_layer = nn.Linear(
             self.nb_of_state_variables, 
@@ -37,9 +37,9 @@ class NN(nn.Module):
             
             self.hidden_layers.append(hidden_layer)
         
-        self.ouput_layer = nn.Linear(
+        self.output_layer = nn.Linear(
             hidden_dims[-1],
-            self.nb_of_actions,
+            self.nb_of_output_values,
             bias = add_biases
         )
         
@@ -49,4 +49,4 @@ class NN(nn.Module):
         for hidden_layer in self.hidden_layers:
             x = self.activation_functions(hidden_layer(x))
             
-        return self.ouput_layer(x)
+        return self.output_layer(x)

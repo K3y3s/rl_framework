@@ -112,6 +112,7 @@ class Action:
         self.action_context = action_context
         self.current_step = 0
         self._trigger_decay = True
+        self.epsilon = action_context.epsilon
 
     @property
     def trigger_decay(self) -> bool:
@@ -140,6 +141,7 @@ class Action:
         else:
             epsilon = self.action_context.epsilon
     
+        self.epsilon = epsilon
         return epsilon
     
     def compute_action(self, states = None) -> int | float:
