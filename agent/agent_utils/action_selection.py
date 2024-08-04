@@ -132,12 +132,21 @@ class Action:
     def choose_action(self, action_state_values: list[float]) -> int:
         raise NotImplementedError
 
+    def _decay_epsilon(self) -> float:
+        if self.action_context.epsilon_decay <= self.current_step:
+                epsilon = 0.
+            
+        else:
+                eps_diff = self.action_context.epsilon - self.action_context.epsilon_decay_value
+                epsilon = self.action_context.epsilon -  eps_diff/self.action_context.epsilon_decay * self.current_step
+        
+        return epsilon
+    
     def _compute_epsilon(self) -> float:
         
         if self.action_context.epsilon_decay is not None and self._trigger_decay:
-            eps_diff = self.action_context.epsilon - self.action_context.epsilon_decay_value
-            epsilon = self.action_context.epsilon -  eps_diff/self.action_context.epsilon_decay * self.current_step
-            
+            epsilon = self._decay_epsilon()
+                
         else:
             epsilon = self.action_context.epsilon
     
