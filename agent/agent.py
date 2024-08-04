@@ -34,7 +34,8 @@ class Agent:
                  env:Env,
                  loss_function:callable,
                  optimizer:Optimizer,
-                 learning_rate:float
+                 learning_rate:float,
+                 target_model: None
                  ) -> None:
         
         self.model = online_model
@@ -44,6 +45,7 @@ class Agent:
         self._loss_function = loss_function
         self.learning_rate = learning_rate
         self.optimizer = optimizer(self.model.parameters(), self.learning_rate)
+        self.target_model = target_model
         
         self.action: Action = None
 
@@ -141,7 +143,8 @@ class AgentBuilder:
             gamma=gamma,
             loss_function=loss_function,
             optimizer=optimizer,
-            learning_rate=learning_rate
+            learning_rate=learning_rate,
+            target_model=self.target_model
             )
         
         self.agent.target_model = self.target_model
