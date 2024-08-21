@@ -27,14 +27,13 @@ class NN(nn.Module):
             hidden_dims[0],
             bias= add_biases)
         
+            
         self.hidden_layers = nn.ModuleList()
-        
         for i in range(len(hidden_dims) - 1):
             hidden_layer = nn.Linear(
                 hidden_dims[i], 
                 hidden_dims[i+1],
-                bias=add_biases)
-            
+                bias=add_biases)    
             self.hidden_layers.append(hidden_layer)
         
         self.output_layer = nn.Linear(
@@ -46,6 +45,7 @@ class NN(nn.Module):
     def forward(self, state:torch.Tensor):
         
         x =  self.activation_functions(self.input_layer(state))
+
         for hidden_layer in self.hidden_layers:
             x = self.activation_functions(hidden_layer(x))
             

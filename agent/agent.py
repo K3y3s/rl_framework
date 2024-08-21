@@ -74,19 +74,20 @@ class Agent:
         if self.target_model is not None:
             target_vals = self.target_model(samples['state']).max(1)[0].detach()
         else:
-            target_vals = self.model(samples['state']).max(1)[0].detach()
-            
+            target_vals = self.model(samples['state']).max(1)[0]
+        
         target_vals[samples['terminated']] = 0.
         
         target_vals = samples['reward'] + self.gamma * target_vals
-            
+        
         predictions = self.model(samples['previous_state']) \
             .gather(1, samples['action'].unsqueeze(-1)).squeeze(-1)
         
         loss = self.loss_function(target_vals, predictions)
+        self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        self.optimizer.zero_grad()
+
     
     def _prepare_data(self, samples:dict) -> dict:
         samples ={key: torch.tensor(np.array(item)) for key, item in samples.items()}

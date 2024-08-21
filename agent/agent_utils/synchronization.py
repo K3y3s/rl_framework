@@ -23,7 +23,9 @@ class SimpleSynchronization(Synchronization):
 
     def make_synchronization(self, current_step:int) -> None:
         if current_step % self.synchronization == 0:
-            self.nn_to_synchronize = deepcopy(self.nn)
+            for target, online in zip (self.nn_to_synchronize.parameters(), 
+                                       self.nn.parameters()):
+                target.data.copy_(online.data)
 
 @dataclass
 class SyncContext:
