@@ -49,14 +49,6 @@ class Agent:
         
         self.action: Action = None
 
-    @property
-    def trigger_decay(self):
-        return self.action.trigger_decay
-    
-    @trigger_decay.setter
-    def trigger_decay(self, trigger):
-        self.action.trigger_decay = trigger
-
     def synchronize(self, current_step:int) -> None:
         raise NotImplementedError
     

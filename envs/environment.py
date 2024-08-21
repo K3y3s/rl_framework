@@ -7,7 +7,6 @@ import numpy as np
 
 class FireResetEnv(gym.Wrapper):
     def __init__(self, env=None):
-        """Dla srodowisk, w ktorych uzytkownik musi nacisnac przycisk FIRE, aby rozpoczac gre."""
         super(FireResetEnv, self).__init__(env)
         assert env.unwrapped.get_action_meanings()[1] == 'FIRE'
         assert len(env.unwrapped.get_action_meanings()) >= 3
@@ -28,9 +27,7 @@ class FireResetEnv(gym.Wrapper):
 
 class MaxAndSkipEnv(gym.Wrapper):
     def __init__(self, env=None, skip=4):
-        """Pomija liczbe klatek rowna `skip`"""
         super(MaxAndSkipEnv, self).__init__(env)
-        # najnowsze obserwacje (dla operacji max pooling krokow czasowych)
         self._obs_buffer = collections.deque(maxlen=2)
         self._skip = skip
 
@@ -47,7 +44,6 @@ class MaxAndSkipEnv(gym.Wrapper):
         return max_frame, total_reward, done, _, info
 
     def reset(self, seed=None, options=None):
-        """Wyczysc bufor ramki i zainicjalizuj srodowisko w celu otrzymania pierwszej obserwacji."""
         self._obs_buffer.clear()
         obs, _ = self.env.reset()
         self._obs_buffer.append(obs)
@@ -121,6 +117,10 @@ class BufferWrapper(gym.ObservationWrapper):
 
 
 def make_env(env_name:str):
+    """
+        Make for specific use for Gymnasium Environments
+    """
+    
     env = gym.make(env_name)
     env = MaxAndSkipEnv(env)
     env = FireResetEnv(env)

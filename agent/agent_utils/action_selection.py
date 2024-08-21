@@ -114,14 +114,6 @@ class Action:
         self._trigger_decay = True
         self.epsilon = action_context.epsilon
 
-    @property
-    def trigger_decay(self) -> bool:
-        return self._trigger_decay
-    
-    @trigger_decay.setter
-    def trigger_decay(self, trigger:bool) -> None:
-        self._trigger_decay = trigger
-        self.current_step = 0
 
     def make_exploration() -> int:
         raise NotImplementedError
@@ -144,7 +136,7 @@ class Action:
     
     def _compute_epsilon(self) -> float:
         
-        if self.action_context.epsilon_decay is not None and self._trigger_decay:
+        if self.action_context.epsilon_decay is not None:
             epsilon = self._decay_epsilon()
                 
         else:
