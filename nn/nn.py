@@ -29,12 +29,14 @@ class NN(nn.Module):
         
             
         self.hidden_layers = nn.ModuleList()
-        for i in range(len(hidden_dims) - 1):
-            hidden_layer = nn.Linear(
-                hidden_dims[i], 
-                hidden_dims[i+1],
-                bias=add_biases)    
-            self.hidden_layers.append(hidden_layer)
+        
+        if len(hidden_dims) > 1:
+            for i in range(len(hidden_dims) - 1):
+                hidden_layer = nn.Linear(
+                    hidden_dims[i], 
+                    hidden_dims[i+1],
+                    bias=add_biases)    
+                self.hidden_layers.append(hidden_layer)
         
         self.output_layer = nn.Linear(
             hidden_dims[-1],

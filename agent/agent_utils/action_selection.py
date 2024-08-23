@@ -23,7 +23,7 @@ class ActionContext:
     nn: Module | None = None # neural network used for actions
     policy:str | None = None
     epsilon_decay: int | None = None # after how many steps epsilon should be set to epsilon_value
-    epsilon_decay_value: float | None = None # what is a value of an epsilon after epsilon_decay 
+    epsilon_decay_value: float | None = None # what is a value of an epsilon after epsilon_decay steps
     
 
     def __post_init__(self):
@@ -141,7 +141,7 @@ class Action:
                 
         else:
             epsilon = self.action_context.epsilon
-    
+
         self.epsilon = epsilon
         return epsilon
     

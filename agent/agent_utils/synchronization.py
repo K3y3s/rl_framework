@@ -26,6 +26,7 @@ class SimpleSynchronization(Synchronization):
             for target, online in zip (self.nn_to_synchronize.parameters(), 
                                        self.nn.parameters()):
                 target.data.copy_(online.data)
+            #print(f'Synchronization done after {current_step}')
 
 @dataclass
 class SyncContext:

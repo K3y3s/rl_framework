@@ -12,7 +12,7 @@ ActType = TypeVar("ActType")
 
 class Env(Protocol):
     
-    def step(action: ActType) -> tuple[ObsType, float, bool, bool, dict[str, Any]]:
+    def step(action: ActType) -> tuple[ObsType, float, bool, bool | None, dict[str, Any] | None]:
             ...
             
 class Optimizer(Protocol):
